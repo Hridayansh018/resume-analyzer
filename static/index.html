@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Analysis</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1420;
+      --surface: rgba(15, 32, 64, 0.9);
+      --surface-strong: rgba(15, 32, 64, 1);
+      --text: #edf2f7;
+      --muted: #94a3b8;
+      --accent: #7c3aed;
+      --accent-soft: rgba(124, 58, 237, 0.18);
+      --border: rgba(148, 163, 184, 0.18);
+      --success: #22c55e;
+      --error: #f97316;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(124, 58, 237, 0.22), transparent 30%),
+                  radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.16), transparent 24%),
+                  linear-gradient(180deg, #071019 0%, #08121d 45%, #0b1728 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    .hero {
+      padding: 36px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.92));
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      margin-bottom: 28px;
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 3vw, 4rem);
+      line-height: 1.02;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      border: 1px solid transparent;
+      border-radius: 16px;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: rgba(124, 58, 237, 0.22);
+      border-color: rgba(124, 58, 237, 0.4);
+    }
+
+    form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type="text"], textarea, input[type="file"] {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    input[type="file"]:focus {
+      border-color: rgba(124, 58, 237, 0.7);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+    }
+
+    textarea {
+      min-height: 160px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .button {
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #7c3aed, #22c55e);
+      color: #fff;
+      padding: 16px 24px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .results {
+      margin-top: 22px;
+      padding: 22px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .results pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 760px) {
+      .tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero,
+      .card {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="eyebrow">Resume Analysis</div>
+      <h1>AI-powered resume review, ATS scoring, and preparation</h1>
+      <p>Upload your PDF resume and instantly compare it to a job description, generate recruiting-ready cover letters, or create interview practice questions.</p>
+    </section>
+
+    <section class="card">
+      <div class="tabs" role="tablist" aria-label="Resume analysis modes">
+        <button class="tab active" type="button" data-mode="review">Review</button>
+        <button class="tab" type="button" data-mode="ats">ATS Score</button>
+        <button class="tab" type="button" data-mode="cover-letter">Cover Letter</button>
+        <button class="tab" type="button" data-mode="interview">Interview Questions</button>
+      </div>
+
+      <div class="note">All results are generated using the backend AI endpoints. Make sure your API server is running at the same host.</div>
+    </section>
+
+    <section class="card">
+      <form id="resumeForm">
+        <div class="field">
+          <label for="resumeFile">Resume PDF</label>
+          <input id="resumeFile" name="file" type="file" accept="application/pdf" required />
+        </div>
+
+        <div class="field" id="jobDescriptionField">
+          <label for="jobDescription">Job Description</label>
+          <textarea id="jobDescription" name="job_description" placeholder="Paste the job description here..."></textarea>
+        </div>
+
+        <div class="field" id="companyField" style="display:none;">
+          <label for="companyName">Company Name</label>
+          <input id="companyName" name="company_name" type="text" placeholder="Acme Inc." />
+        </div>
+
+        <div class="field" id="titleField" style="display:none;">
+          <label for="jobTitle">Job Title</label>
+          <input id="jobTitle" name="job_title" type="text" placeholder="Senior Software Engineer" />
+        </div>
+
+        <div class="actions">
+          <button class="button" id="submitButton" type="submit">Run Resume Review</button>
+          <span class="status" id="statusText">Ready to analyze your resume.</span>
+        </div>
+      </form>
+
+      <div class="results" id="resultsPanel" aria-live="polite">
+        <div class="badge">Results will appear here</div>
+        <pre id="resultContent">Upload a resume and choose a mode to begin.</pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const apiOrigin = (() => {
+      const origin = window.location.origin;
+      if (origin.includes(':5500') || origin === 'null') {
+        return 'http://127.0.0.1:8000';
+      }
+      return origin;
+    })();
+
+    const modes = {
+      review: {
+        label: 'Run Resume Review',
+        endpoint: `${apiOrigin}/review`,
+        fields: ['jobDescriptionField']
+      },
+      ats: {
+        label: 'Calculate ATS Score',
+        endpoint: `${apiOrigin}/ats-score`,
+        fields: ['jobDescriptionField']
+      },
+      'cover-letter': {
+        label: 'Create Cover Letter',
+        endpoint: `${apiOrigin}/cover-letter`,
+        fields: ['companyField', 'titleField']
+      },
+      interview: {
+        label: 'Generate Interview Questions',
+        endpoint: `${apiOrigin}/interview-questions`,
+        fields: ['jobDescriptionField']
+      }
+    };
+
+    const tabs = document.querySelectorAll('.tab');
+    const jobDescriptionField = document.getElementById('jobDescriptionField');
+    const companyField = document.getElementById('companyField');
+    const titleField = document.getElementById('titleField');
+    const submitButton = document.getElementById('submitButton');
+    const resultContent = document.getElementById('resultContent');
+    const statusText = document.getElementById('statusText');
+    const resumeForm = document.getElementById('resumeForm');
+    let currentMode = 'review';
+
+    function setActiveMode(mode) {
+      currentMode = mode;
+      tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
+      submitButton.textContent = modes[mode].label;
+      jobDescriptionField.style.display = modes[mode].fields.includes('jobDescriptionField') ? 'block' : 'none';
+      companyField.style.display = modes[mode].fields.includes('companyField') ? 'block' : 'none';
+      titleField.style.display = modes[mode].fields.includes('titleField') ? 'block' : 'none';
+      resultContent.textContent = 'Ready for the ' + modes[mode].label.toLowerCase() + '.';
+      statusText.textContent = 'Selected: ' + mode.replace('-', ' ');
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => setActiveMode(tab.dataset.mode));
+    });
+
+    function renderResult(data) {
+      resultContent.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function renderError(message) {
+      resultContent.textContent = 'Error: ' + message;
+    }
+
+    resumeForm.addEventListener('submit', async event => {
+      event.preventDefault();
+
+      const fileInput = document.getElementById('resumeFile');
+      if (!fileInput.files.length) {
+        renderError('Please upload a PDF resume file.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      if (modes[currentMode].fields.includes('jobDescriptionField')) {
+        const description = document.getElementById('jobDescription').value.trim();
+        if (!description) {
+          renderError('Please enter a job description.');
+          return;
+        }
+        formData.append('job_description', description);
+      }
+
+      if (currentMode === 'cover-letter') {
+        const companyName = document.getElementById('companyName').value.trim();
+        const jobTitle = document.getElementById('jobTitle').value.trim();
+        if (!companyName || !jobTitle) {
+          renderError('Please enter both company name and job title.');
+          return;
+        }
+        formData.append('company_name', companyName);
+        formData.append('job_title', jobTitle);
+      }
+
+      statusText.textContent = 'Analyzing...';
+      resultContent.textContent = 'Waiting for the AI service to respond...';
+      submitButton.disabled = true;
+
+      try {
+        const response = await fetch(modes[currentMode].endpoint, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => null);
+          let message = response.statusText || 'Unknown error';
+
+          if (text) {
+            try {
+              const errorData = JSON.parse(text);
+              message = errorData.detail || errorData.message || text;
+            } catch {
+              message = text;
+            }
+          }
+
+          renderError(message);
+          statusText.textContent = `Request failed (${response.status})`;
+        } else {
+          const data = await response.json();
+          renderResult(data);
+          statusText.textContent = 'Completed successfully';
+        }
+      } catch (error) {
+        renderError(error.message || 'Network error');
+        statusText.textContent = 'Network error';
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    setActiveMode(currentMode);
+  </script>
+</body>
+</html>
