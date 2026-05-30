@@ -13,7 +13,6 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 
 AI_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 
-
 cors_origins = os.getenv("CORS_ALLOW_ORIGINS")
 if cors_origins:
     if cors_origins.strip() == "*":
