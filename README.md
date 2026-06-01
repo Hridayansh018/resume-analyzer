@@ -96,6 +96,13 @@ Form fields:
 The app includes a static single-page UI at `static/index.html`.
 The FastAPI app mounts this under `/`, so visiting the root URL serves the UI automatically.
 
+### New UI Behavior
+
+- The frontend now supports progressive response rendering for all endpoints, displaying streamed chunks as they arrive.
+- A spinner appears while the request is active, and the result panel auto-scrolls with incoming output.
+- The UI will try to parse the complete streamed response as JSON after the stream finishes; if the response is plain text, it is shown raw.
+- This updates the existing implementation without removing the original endpoint usage or form behavior.
+
 ## Environment Variables
 
 - `OPENROUTER_API_KEY` — required API key used by `client.py` to communicate with the AI service.

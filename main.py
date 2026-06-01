@@ -7,6 +7,8 @@ import os, io
 from client import client
 from schema import ReviewResponse, ATSResponse, InterviewQuestionsResponse, CoverLetterResponse
 import json
+from fastapi.responses import StreamingResponse
+import logging
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
@@ -34,6 +36,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logger = logging.getLogger(__name__)
 
 def read_resume(contents:bytes)->str:
     reader = PdfReader(io.BytesIO(contents))
@@ -156,7 +160,37 @@ RESUME:
 {resume_text}
 """
 
-@app.post("/review",response_model=ReviewResponse)
+
+def stream_completion(prompt:str):
+    try:
+        stream = client.chat.completions.create(
+            model=AI_MODEL,
+            messages=[
+                {
+            "role":"user",
+            "content":prompt
+            }
+            ],
+            stream=True
+        )
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = (chunk.choices[0].delta.content)
+            if delta:
+                yield delta
+    except Exception as e:
+        logger.exception(
+            "LLM Streaming failed"
+        )
+        yield(
+            "\n\n"
+            f"Error: {str(e)}"
+        )
+        
+
+
+@app.post("/review")
 async def review_resume(
     file:UploadFile = File(...),
     job_description:str = Form(...)
@@ -173,38 +207,59 @@ async def review_resume(
         resume_text = resume_text
     )
 
-    try:
-        completion = client.chat.completions.create(
-            model=AI_MODEL,
-            messages=[
-            {
-            "role":"user",
-            "content":prompt
-            }
-        ],
-        response_format={
-            "type":"json_object"
-        },
-        temperature=0.7
+    # def generate():
+    #     stream = client.chat.completions.create(
+    #         model=AI_MODEL,
+    #         messages=[
+    #         {
+    #         "role":"user",
+    #         "content":prompt
+    #         }
+    #     ], stream = True
+    #     )
+    #     for chunk in stream:
+    #         if chunk.choices:
+    #                 delta = chunk.choices[0].delta.content
+    #                 if delta:
+    #                     yield delta
+        
+    return StreamingResponse(
+        stream_completion(prompt),
+        media_type="text/plain"
     )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI Error: {str(e)}"
-        )
+
+    # try:
+    #     completion = client.chat.completions.create(
+    #         model=AI_MODEL,
+    #         messages=[
+    #         {
+    #         "role":"user",
+    #         "content":prompt
+    #         }
+    #     ],
+    #     response_format={
+    #         "type":"json_object"
+    #     },
+    #     temperature=0.7
+    # )
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=f"AI Error: {str(e)}"
+    #     )
 
 
-    try:
-        data = json.loads(
-            completion.choices[0].message.content
-        )
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=500,
-            detail="Model returned invalid JSON"
-        )
+    # try:
+    #     data = json.loads(
+    #         completion.choices[0].message.content
+    #     )
+    # except json.JSONDecodeError:
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail="Model returned invalid JSON"
+    #     )
 
-    return ReviewResponse(**data)
+    # return ReviewResponse(**data)
 
 
 
